@@ -9,14 +9,25 @@ import org.jsoup.select.*;
 public class Robot {
     public static void main(String[] args) {
         try {
-            Index index = (Index) LocateRegistry.getRegistry(8183).lookup("index");
+            Index index = (Index) LocateRegistry.getRegistry(8181).lookup("index");
             while (true) {
                 String url = index.takeNext();
-                System.out.println(url);
-                Document doc = Jsoup.connect(url).get();
-                System.out.println(doc);
-                //Todo: Read JSOUP documentation and parse the html to index the keywords. 
-                //Then send back to server via index.addToIndex(...)
+                System.out.println("\nEsste é p url:" + url);
+                if (url == "") continue;
+                Document doc = Jsoup.connect(url).get(); // all HTML
+                
+                // put links in queue
+                Elements links = doc.select("a[href]"); // ignores the a without href
+                for (Element e: links){
+                    index.putNew(e.attr("abs:href")); // adds links to list
+                }
+
+                // 'indexate' words to urls
+                String text = doc.body().text();
+                String[] words = text.split("\\W+"); // illegal chars
+                for (String s: words){
+                    index.addToIndex(s, url);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
